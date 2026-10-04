@@ -695,14 +695,14 @@ class App:
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["test"]:
-        base = "ChatBot Developer | Founder @nzdiary_bot @CookieMerge_Bot"
+        base = "Your bio"
         p = DEFAULTS["prefix"]
         assert build_bio(base, p, None, 140) == base
-        assert build_bio(base, p, "Nervy - Зацепило", 140) == p + "Nervy - Зацепило\n" + base
+        assert build_bio(base, p, "Michael Jackson - Beat It", 140) == p + "Michael Jackson - Beat It\n" + base
         assert len(build_bio(base, p, "x" * 300, 140)) == 140
-        assert len(build_bio(base, p, "Nervy - Зацепило", 70)) <= 70
-        assert build_bio("", p, "Nervy - Зацепило", 70) == p + "Nervy - Зацепило"
-        assert strip_track_line(p + "Nervy - Зацепило\n" + base, p) == base
+        assert len(build_bio(base, p, "Michael Jackson - Beat It", 70)) <= 70
+        assert build_bio("", p, "Michael Jackson - Beat It", 70) == p + "Michael Jackson - Beat It"
+        assert strip_track_line(p + "Michael Jackson - Beat It\n" + base, p) == base
         assert strip_track_line(base, p) == base
         assert parse_version("v1.10.0") > parse_version("v1.9.2") > parse_version("1.9")
         print("ok")

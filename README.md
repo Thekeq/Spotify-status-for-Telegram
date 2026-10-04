@@ -3,8 +3,8 @@
 Shows the track you're playing on Spotify as the first line of your Telegram bio, Discord-style:
 
 ```
-Listening to Spotify: Nervy - Зацепило
-ChatBot Developer | Founder @nzdiary_bot
+Listening to Spotify: Michael Jackson - Beat It
+Your bio
 ```
 
 When the music is paused or the app is closed, your normal bio comes back.
