@@ -4,6 +4,7 @@ import queue
 import sys
 import threading
 import time
+import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import messagebox
@@ -28,6 +29,9 @@ DEFAULTS = {"api_id": "", "api_hash": "", "spotify_client_id": "", "prefix": "Li
 GREEN, GREEN_HOVER = "#1DB954", "#1ED760"
 RED, RED_HOVER = "#E5534B", "#F06A62"
 MUTED = "#8A8A8A"
+
+# Windows virtual key codes, so shortcuts work on any keyboard layout (Tk sees Cyrillic etc. keysyms)
+EDIT_KEYS = {67: "<<Copy>>", 86: "<<Paste>>", 88: "<<Cut>>", 65: "<<SelectAll>>"}
 
 
 def load_config():
@@ -165,7 +169,7 @@ class Worker:
             self.app.log("Bio too long, using the normal bio")
             await tg(functions.account.UpdateProfileRequest(about=self.cfg["bio"]))
             return True
-        self.app.log("Bio: " + bio.replace("\n", " | "))
+        self.app.log("Bio updated:\n          " + bio.replace("\n", "\n          "))
         return True
 
     async def _main(self):
@@ -346,6 +350,14 @@ class App:
         self.out = ctk.CTkTextbox(right, font=ctk.CTkFont(family="Consolas", size=12), state="disabled")
         self.out.pack(fill="both", expand=True, pady=(2, 0))
 
+        self.menu = tk.Menu(root, tearoff=0)
+        for label, event, keys in [("Cut", "<<Cut>>", "Ctrl+X"), ("Copy", "<<Copy>>", "Ctrl+C"),
+                                   ("Paste", "<<Paste>>", "Ctrl+V"), ("Select all", "<<SelectAll>>", "Ctrl+A")]:
+            self.menu.add_command(label=label, accelerator=keys,
+                                  command=lambda e=event: self.menu_target.event_generate(e))
+        root.bind_all("<Button-3>", self._context_menu)
+        root.bind_all("<Control-KeyPress>", self._ctrl_key)
+
         root.protocol("WM_DELETE_WINDOW", self.close)
         self._poll()
         if autostart:
@@ -369,6 +381,19 @@ class App:
         self.vars[key] = ctk.StringVar(value=self.cfg[key])
         ctk.CTkEntry(parent, textvariable=self.vars[key], height=34, show="•" if secret else "").grid(
             row=row + 1, column=col, columnspan=colspan, sticky="ew", padx=14, pady=(0, 12))
+
+    def _context_menu(self, event):
+        if isinstance(event.widget, (tk.Entry, tk.Text)):
+            self.menu_target = event.widget
+            event.widget.focus_set()
+            self.menu.tk_popup(event.x_root, event.y_root)
+
+    def _ctrl_key(self, event):
+        # Latin layouts are already handled by Tk's own bindings
+        if event.keysym.lower() not in ("c", "v", "x", "a") and event.keycode in EDIT_KEYS \
+                and isinstance(event.widget, (tk.Entry, tk.Text)):
+            event.widget.event_generate(EDIT_KEYS[event.keycode])
+            return "break"
 
     def _copy_redirect(self):
         self.root.clipboard_clear()
