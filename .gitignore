@@ -1,0 +1,10 @@
+# личные данные — никогда не коммитить
+config.json
+*.session
+*.session-journal
+.spotify_cache
+
+__pycache__/
+build/
+dist/
+*.spec
