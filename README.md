@@ -13,7 +13,7 @@ When the music is paused or the app is closed, your normal bio comes back.
 
 ## Install
 
-Download `SpotifyStatus.exe` from [Releases](../../releases) and put it in its own folder: settings and the login session are stored next to it.
+Download `SpotifyStatus.exe` from [Releases](../../releases) and run it. The app checks for updates on every start and can update itself in one click; your settings are kept.
 
 Or run from source (Python 3.10+ with Tk):
 
@@ -47,4 +47,4 @@ Leave "Your normal bio" empty to take it from your profile. Closing the window k
 
 ## Security
 
-`config.json` and `tg_session.session` are stored next to the app. **The session file gives full access to your Telegram account**: never share it. The app talks only to the Telegram and Spotify APIs.
+Settings (`config.json`) and the login session (`tg_session.session`) are stored in `%APPDATA%\SpotifyStatus`. **The session file gives full access to your Telegram account**: never share it. The app talks only to the Telegram and Spotify APIs, plus GitHub to check for updates.
