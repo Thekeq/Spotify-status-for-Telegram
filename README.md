@@ -36,7 +36,7 @@ python app.py
 Paste everything into the app and press **Start**.
 On the first run a browser window opens to sign in to Spotify, then a QR code appears: scan it with Telegram on your phone (*Settings → Devices → Link Desktop Device*). If you use two-step verification, the app asks for that password too. No login code needed.
 
-Leave "Your normal bio" empty to take it from your profile. Turn on **Launch with Windows** to start the app minimized at login.
+Leave "Your normal bio" empty to take it from your profile. Closing the window keeps the app running in the system tray (right-click the tray icon → *Quit* to exit). Turn on **Launch with Windows** to start it in the tray at login.
 
 ## Limits
 

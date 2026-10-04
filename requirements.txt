@@ -3,3 +3,4 @@ spotipy
 customtkinter
 qrcode
 pillow
+pystray

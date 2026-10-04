@@ -9,7 +9,10 @@ import webbrowser
 from pathlib import Path
 from tkinter import messagebox
 
+from PIL import Image, ImageDraw
+
 import customtkinter as ctk
+import pystray
 import qrcode
 import spotipy
 from spotipy.oauth2 import SpotifyPKCE
@@ -62,6 +65,16 @@ def strip_track_line(about, prefix):
     """Removes a leftover track line (e.g. after a crash)."""
     first, _, rest = about.partition("\n")
     return rest if first.startswith((prefix, "♪ ")) else about
+
+
+def tray_image():
+    """Green circle with equalizer bars."""
+    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    draw.ellipse((2, 2, 62, 62), fill=GREEN)
+    for x, h in ((17, 18), (29, 30), (41, 22)):
+        draw.rounded_rectangle((x, 32 - h // 2, x + 6, 32 + h // 2), radius=3, fill="black")
+    return img
 
 
 def current_track(sp):
@@ -358,10 +371,18 @@ class App:
         root.bind_all("<Button-3>", self._context_menu)
         root.bind_all("<Control-KeyPress>", self._ctrl_key)
 
-        root.protocol("WM_DELETE_WINDOW", self.close)
+        # pystray runs in its own thread: hand its clicks to the GUI thread via the queue
+        self.tray = pystray.Icon(APP_NAME, tray_image(), "Spotify Status", menu=pystray.Menu(
+            pystray.MenuItem("Open", lambda: self.ui(self.show_window), default=True),
+            pystray.MenuItem("Quit", lambda: self.ui(self.quit))))
+        self.tray.run_detached()
+        self.tray_hint_shown = False
+
+        root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
         self._poll()
         if autostart:
-            root.after(0, root.iconify)
+            self.tray_hint_shown = True
+            root.after(0, root.withdraw)
             root.after(1000, self.toggle)
 
     def _card(self, parent, title, url=None):
@@ -459,6 +480,7 @@ class App:
 
     def show_track(self, track):
         self.track.configure(text=track or "—")
+        self.tray.title = f"Spotify Status: {track}"[:120] if track else "Spotify Status"  # tray tooltip
 
     def on_stopped(self):
         self.show_running(False)
@@ -481,10 +503,23 @@ class App:
         self.worker.thread.start()
         self.btn.configure(text="Stop", fg_color=RED, hover_color=RED_HOVER)
 
-    def close(self):
+    def hide_to_tray(self):
+        self.root.withdraw()
+        if not self.tray_hint_shown:
+            self.tray_hint_shown = True
+            self.tray.notify("Still running in the tray. Right-click the icon to quit.", "Spotify Status")
+
+    def show_window(self):
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
+
+    def quit(self):
         if self.worker and self.worker.thread.is_alive():
             self.worker.stop()
             self.worker.thread.join(timeout=10)  # let it restore the normal bio
+        self.tray.visible = False  # remove now, or a ghost icon stays until hovered
+        self.tray.stop()
         self.root.destroy()
 
 

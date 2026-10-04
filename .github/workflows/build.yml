@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller --onefile --windowed --collect-data customtkinter --name SpotifyStatus app.py
+      - run: pyinstaller --onefile --windowed --collect-data customtkinter --hidden-import pystray._win32 --name SpotifyStatus app.py
       - uses: actions/upload-artifact@v4
         with:
           name: SpotifyStatus
