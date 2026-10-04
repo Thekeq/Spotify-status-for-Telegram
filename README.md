@@ -34,9 +34,7 @@ python app.py
 3. Copy the *Client ID* (no secret needed).
 
 Paste everything into the app and press **Start**.
-On the first run a browser window opens to sign in to Spotify, then the app asks for your phone number and the Telegram login code.
-
-> **Where's my code?** Telegram usually sends it **to the Telegram app, not by SMS**: look for a message from the official "Telegram" account on any device where you're logged in. The app's log tells you where it was sent.
+On the first run a browser window opens to sign in to Spotify, then a QR code appears: scan it with Telegram on your phone (*Settings → Devices → Link Desktop Device*). If you use two-step verification, the app asks for that password too. No login code needed.
 
 Leave "Your normal bio" empty to take it from your profile. Turn on **Launch with Windows** to start the app minimized at login.
 

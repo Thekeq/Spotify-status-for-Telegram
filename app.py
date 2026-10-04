@@ -9,11 +9,11 @@ from pathlib import Path
 from tkinter import messagebox
 
 import customtkinter as ctk
+import qrcode
 import spotipy
 from spotipy.oauth2 import SpotifyPKCE
 from telethon import TelegramClient, functions
-from telethon.errors import (AboutTooLongError, FloodWaitError, PasswordHashInvalidError,
-                             PhoneCodeInvalidError, SessionPasswordNeededError)
+from telethon.errors import AboutTooLongError, FloodWaitError, PasswordHashInvalidError, SessionPasswordNeededError
 
 if sys.platform == "win32":
     import winreg
@@ -28,16 +28,6 @@ DEFAULTS = {"api_id": "", "api_hash": "", "spotify_client_id": "", "prefix": "Li
 GREEN, GREEN_HOVER = "#1DB954", "#1ED760"
 RED, RED_HOVER = "#E5534B", "#F06A62"
 MUTED = "#8A8A8A"
-
-CODE_HINTS = {
-    "SentCodeTypeApp": "Code sent to your Telegram app: open the chat with the official \"Telegram\" "
-                       "account on any device where you're logged in (it's not an SMS)",
-    "SentCodeTypeSms": "Code sent by SMS",
-    "SentCodeTypeCall": "You'll get a phone call with the code",
-    "SentCodeTypeFlashCall": "You'll get a call: the code is the caller's phone number",
-    "SentCodeTypeMissedCall": "You'll get a missed call: the code is the last digits of the caller's number",
-    "SentCodeTypeFragmentSms": "Code sent to your Fragment number",
-}
 
 
 def load_config():
@@ -139,22 +129,24 @@ class Worker:
         return answer
 
     async def _login(self, tg):
+        """QR login, like Telegram Desktop: no login code to wait for."""
         await tg.connect()
         if await tg.is_user_authorized():
             return
-        phone = await self._ask("Phone number with country code\n(+<country code> <number>)")
-        phone = "+" + "".join(ch for ch in phone if ch.isdigit())
-        sent = await tg.send_code_request(phone)
-        kind = type(sent.type).__name__
-        self.app.log(CODE_HINTS.get(kind, f"Code sent ({kind})"))
-        while True:
-            try:
-                await tg.sign_in(phone, await self._ask("Login code from Telegram"))
-                return
-            except PhoneCodeInvalidError:
-                self.app.log("Wrong code, try again")
-            except SessionPasswordNeededError:
-                break
+        self.app.log("Scan the QR code with Telegram on your phone")
+        qr = await tg.qr_login()
+        try:
+            while True:
+                self.app.ui(lambda url=qr.url: self.app.show_qr(url))
+                try:
+                    await qr.wait()
+                    return
+                except asyncio.TimeoutError:
+                    await qr.recreate()  # token expires every ~30 s
+        except SessionPasswordNeededError:
+            pass
+        finally:
+            self.app.ui(self.app.hide_qr)
         while True:
             try:
                 await tg.sign_in(password=await self._ask("Two-step verification password", secret=True))
@@ -257,9 +249,32 @@ class Prompt(ctk.CTkToplevel):
         self.destroy()
 
 
+class QrWindow(ctk.CTkToplevel):
+    def __init__(self, master, on_cancel):
+        super().__init__(master)
+        self.title("Telegram login")
+        self.resizable(False, False)
+        ctk.CTkLabel(self, text="Scan with your phone", font=ctk.CTkFont(size=17, weight="bold")).pack(
+            padx=24, pady=(20, 4))
+        ctk.CTkLabel(self, text="Telegram → Settings → Devices → Link Desktop Device",
+                     text_color=MUTED).pack(padx=24)
+        self.qr = ctk.CTkLabel(self, text="")
+        self.qr.pack(padx=24, pady=16)
+        ctk.CTkButton(self, text="Cancel", width=140, fg_color="transparent", border_width=1,
+                      command=on_cancel).pack(pady=(0, 20))
+        self.protocol("WM_DELETE_WINDOW", on_cancel)
+        self.transient(master)
+        self.after(150, self.lift)
+
+    def set_url(self, url):
+        img = qrcode.make(url, border=2).get_image().convert("RGB")
+        self.image = ctk.CTkImage(light_image=img, dark_image=img, size=(260, 260))  # keep a reference
+        self.qr.configure(image=self.image)
+
+
 class App:
     def __init__(self, root, autostart=False):
-        self.root, self.q, self.worker = root, queue.Queue(), None
+        self.root, self.q, self.worker, self.qr_win = root, queue.Queue(), None, None
         self.cfg = load_config()
         self.vars = {}
         root.title("Spotify Status for Telegram")
@@ -398,6 +413,17 @@ class App:
         self.out.insert("end", msg + "\n")
         self.out.see("end")
         self.out.configure(state="disabled")
+
+    def show_qr(self, url):
+        if not self.qr_win:
+            self.root.deiconify()
+            self.qr_win = QrWindow(self.root, on_cancel=self.toggle)  # toggle stops the worker
+        self.qr_win.set_url(url)
+
+    def hide_qr(self):
+        if self.qr_win:
+            self.qr_win.destroy()
+            self.qr_win = None
 
     def set_bio_field(self, text):
         self.bio.delete("1.0", "end")

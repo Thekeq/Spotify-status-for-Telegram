@@ -1,3 +1,5 @@
 telethon
 spotipy
 customtkinter
+qrcode
+pillow
