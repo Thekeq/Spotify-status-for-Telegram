@@ -1,6 +1,7 @@
 import asyncio
 import json
 import queue
+import socket
 import sys
 import threading
 import time
@@ -26,6 +27,7 @@ APP_NAME = "SpotifyStatusTelegram"
 APP_DIR = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve().parent
 CONFIG = APP_DIR / "config.json"
 REDIRECT = "http://127.0.0.1:8888/callback"
+INSTANCE_PORT = 48731  # localhost port the running copy listens on, so a second launch can find it
 POLL = 15  # seconds between Spotify checks; the bio only changes when the track changes
 DEFAULTS = {"api_id": "", "api_hash": "", "spotify_client_id": "", "prefix": "Listening to Spotify: ", "bio": ""}
 
@@ -75,6 +77,16 @@ def tray_image():
     for x, h in ((17, 18), (29, 30), (41, 22)):
         draw.rounded_rectangle((x, 32 - h // 2, x + 6, 32 + h // 2), radius=3, fill="black")
     return img
+
+
+def signal_running_instance():
+    """True if a copy is already running; that copy is asked to show its window."""
+    try:
+        with socket.create_connection(("127.0.0.1", INSTANCE_PORT), timeout=1) as s:
+            s.sendall(b"show")
+            return s.recv(64) == APP_NAME.encode()  # not some other program on that port
+    except OSError:
+        return False
 
 
 def current_track(sp):
@@ -503,6 +515,28 @@ class App:
         self.worker.thread.start()
         self.btn.configure(text="Stop", fg_color=RED, hover_color=RED_HOVER)
 
+    def listen_for_instances(self):
+        # ponytail: two copies started in the same instant can both get past the check; fine for a desktop app
+        srv = socket.socket()
+        try:
+            srv.bind(("127.0.0.1", INSTANCE_PORT))
+        except OSError:
+            return  # port taken by something else: just run without the single-instance check
+        srv.listen()
+
+        def serve():
+            while True:
+                conn, _ = srv.accept()
+                with conn:
+                    conn.settimeout(1)
+                    try:
+                        if conn.recv(16) == b"show":
+                            conn.sendall(APP_NAME.encode())
+                            self.ui(self.show_window)
+                    except OSError:
+                        pass
+        threading.Thread(target=serve, daemon=True).start()
+
     def hide_to_tray(self):
         self.root.withdraw()
         if not self.tray_hint_shown:
@@ -535,8 +569,8 @@ if __name__ == "__main__":
         assert strip_track_line(p + "Nervy - Зацепило\n" + base, p) == base
         assert strip_track_line(base, p) == base
         print("ok")
-    else:
+    elif not signal_running_instance():
         ctk.set_appearance_mode("dark")
         root = ctk.CTk()
-        App(root, autostart="--autostart" in sys.argv)
+        App(root, autostart="--autostart" in sys.argv).listen_for_instances()
         root.mainloop()
