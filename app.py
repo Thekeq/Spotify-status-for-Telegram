@@ -11,6 +11,7 @@ import time
 import tkinter as tk
 import urllib.request
 import webbrowser
+from collections import deque
 from pathlib import Path
 from tkinter import messagebox
 
@@ -38,6 +39,7 @@ DATA_DIR = Path(os.environ.get("APPDATA") or Path.home() / ".config") / "Spotify
 CONFIG = DATA_DIR / "config.json"
 REDIRECT = "http://127.0.0.1:8888/callback"
 INSTANCE_PORT = 48731  # localhost port the running copy listens on, so a second launch can find it
+LOG_LIMIT = 100  # log entries kept in the window
 POLL = 15  # seconds between Spotify checks; the bio only changes when the track changes
 DEFAULTS = {"api_id": "", "api_hash": "", "spotify_client_id": "", "prefix": "Listening to Spotify: ", "bio": "",
             "star_dismissed": False}
@@ -352,6 +354,7 @@ class App:
         self.root, self.q, self.worker, self.qr_win, self.instance_srv = root, queue.Queue(), None, None, None
         self.cfg = load_config()
         self.vars = {}
+        self.log_sizes = deque()  # line count of each log entry on screen
         root.title("Spotify Status for Telegram")
         root.geometry("920x650")
         root.minsize(860, 650)
@@ -592,6 +595,9 @@ class App:
     def _append(self, msg):
         self.out.configure(state="normal")
         self.out.insert("end", msg + "\n")
+        self.log_sizes.append(msg.count("\n") + 1)  # entries can span lines ("Bio updated:")
+        if len(self.log_sizes) > LOG_LIMIT:  # keep memory flat when running for weeks
+            self.out.delete("1.0", f"{self.log_sizes.popleft() + 1}.0")
         self.out.see("end")
         self.out.configure(state="disabled")
 
