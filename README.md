@@ -1,47 +1,52 @@
-# Spotify → Telegram bio
+# Spotify Status for Telegram
 
-Показывает трек, который сейчас играет в Spotify, первой строкой в описании (bio) Telegram:
+Shows the track you're playing on Spotify as the first line of your Telegram bio, Discord-style:
 
 ```
-Слушает Spotify: Nervy - Зацепило
+Listening to Spotify: Nervy - Зацепило
 ChatBot Developer | Founder @nzdiary_bot
 ```
 
-Музыка на паузе или программа остановлена — возвращается обычное bio.
+When the music is paused or the app is closed, your normal bio comes back.
 
-## Установка
+![screenshot](docs/screenshot.png)
 
-Скачай `SpotifyBio.exe` из [Releases](../../releases) и положи в отдельную папку (там будут храниться настройки и сессия).
+## Install
 
-Или из исходников:
+Download `SpotifyStatus.exe` from [Releases](../../releases) and put it in its own folder: settings and the login session are stored next to it.
+
+Or run from source (Python 3.10+ with Tk):
 
 ```
 pip install -r requirements.txt
 python app.py
 ```
 
-## Настройка (один раз)
+## Setup (once)
 
-**Telegram API ID и Hash**
-1. Зайди на https://my.telegram.org → *API development tools*.
-2. Создай приложение (название любое), скопируй `api_id` и `api_hash`.
+**Telegram API ID and Hash**
+1. Go to https://my.telegram.org → *API development tools*.
+2. Create an app (any name), copy `api_id` and `api_hash`.
 
 **Spotify Client ID**
-1. Зайди на https://developer.spotify.com/dashboard → *Create app*.
-2. В *Redirect URIs* добавь `http://127.0.0.1:8888/callback`, в *APIs used* отметь *Web API*.
-3. Скопируй *Client ID* (Client Secret не нужен).
+1. Go to https://developer.spotify.com/dashboard → *Create app*.
+2. Add `http://127.0.0.1:8888/callback` to *Redirect URIs* and tick *Web API*.
+3. Copy the *Client ID* (no secret needed).
 
-Вставь всё в окно программы → **Запустить**.
-При первом запуске откроется браузер для входа в Spotify, потом программа спросит номер телефона и код из Telegram.
+Paste everything into the app and press **Start**.
+On the first run a browser window opens to sign in to Spotify, then the app asks for your phone number and the Telegram login code.
 
-Поле «Обычное bio» можно оставить пустым — оно возьмётся из профиля.
+> **Where's my code?** Telegram usually sends it **to the Telegram app, not by SMS**: look for a message from the official "Telegram" account on any device where you're logged in. The app's log tells you where it was sent.
 
-## Ограничения
+Leave "Your normal bio" empty to take it from your profile. Turn on **Launch with Windows** to start the app minimized at login.
 
-- Лимит bio: 70 символов, с Telegram Premium — 140. Длинные названия обрезаются.
-- Таймер трека не показывается: Telegram не даёт менять профиль чаще.
-- Работает, пока открыта программа.
+## Limits
 
-## Безопасность
+- Bio is limited to 70 characters (140 with Telegram Premium). Long titles are cut.
+- No track timer: Telegram rate-limits profile changes.
+- Works only while the app is running.
+- Windows SmartScreen may warn about the unsigned exe: *More info → Run anyway*.
 
-`config.json` и `tg_session.session` лежат рядом с программой. **Файл сессии даёт полный доступ к твоему Telegram-аккаунту** — никому его не передавай. Программа ничего никуда не отправляет, кроме API Telegram и Spotify.
+## Security
+
+`config.json` and `tg_session.session` are stored next to the app. **The session file gives full access to your Telegram account**: never share it. The app talks only to the Telegram and Spotify APIs.

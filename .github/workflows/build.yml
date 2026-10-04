@@ -17,12 +17,12 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller --onefile --windowed --name SpotifyBio app.py
+      - run: pyinstaller --onefile --windowed --collect-data customtkinter --name SpotifyStatus app.py
       - uses: actions/upload-artifact@v4
         with:
-          name: SpotifyBio
-          path: dist/SpotifyBio.exe
+          name: SpotifyStatus
+          path: dist/SpotifyStatus.exe
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: dist/SpotifyBio.exe
+          files: dist/SpotifyStatus.exe
