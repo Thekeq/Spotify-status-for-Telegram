@@ -118,6 +118,19 @@ def strip_track_line(about, prefix):
     return rest if first.startswith((prefix, "♪ ")) else about
 
 
+def eye_image(shown):
+    """Eye icon for show/hide buttons; crossed out while the value is hidden."""
+    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    color = "#C8C8C8"
+    draw.arc((4, 12, 60, 68), 200, 340, fill=color, width=5)  # upper lid
+    draw.arc((4, -4, 60, 52), 20, 160, fill=color, width=5)  # lower lid
+    draw.ellipse((22, 22, 42, 42), fill=color)  # pupil
+    if not shown:
+        draw.line((10, 54, 54, 10), fill=color, width=6)
+    return img
+
+
 def tray_image():
     """Green circle with equalizer bars."""
     img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
@@ -363,6 +376,7 @@ class App:
         self.h1 = ctk.CTkFont(size=26, weight="bold")
         self.h2 = ctk.CTkFont(size=15, weight="bold")
         self.small = ctk.CTkFont(size=12)
+        self.eye_icons = {shown: ctk.CTkImage(eye_image(shown), size=(18, 18)) for shown in (False, True)}
 
         # --- left: settings ---
         left = ctk.CTkFrame(root, fg_color="transparent", width=430)
@@ -376,11 +390,11 @@ class App:
         tg = self._card(left, "Telegram", "https://my.telegram.org/apps")
         tg.grid_columnconfigure(0, weight=1)
         tg.grid_columnconfigure(1, weight=2)
-        self._entry(tg, "API ID", "api_id", 1, 0)
+        self._entry(tg, "API ID", "api_id", 1, 0, secret=True)
         self._entry(tg, "API Hash", "api_hash", 1, 1, secret=True)
 
         sp = self._card(left, "Spotify", "https://developer.spotify.com/dashboard")
-        self._entry(sp, "Client ID", "spotify_client_id", 1, 0, colspan=2)
+        self._entry(sp, "Client ID", "spotify_client_id", 1, 0, secret=True, colspan=2)
         redirect = ctk.CTkFrame(sp, fg_color="transparent")
         redirect.grid(row=3, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12))
         ctk.CTkLabel(redirect, text="Redirect URI", text_color=MUTED, font=self.small).pack(side="left")
@@ -474,8 +488,23 @@ class App:
         ctk.CTkLabel(parent, text=label, text_color=MUTED, font=self.small).grid(
             row=row, column=col, columnspan=colspan, sticky="w", padx=14, pady=(4, 0))
         self.vars[key] = ctk.StringVar(value=self.cfg[key])
-        ctk.CTkEntry(parent, textvariable=self.vars[key], height=34, show="•" if secret else "").grid(
-            row=row + 1, column=col, columnspan=colspan, sticky="ew", padx=14, pady=(0, 12))
+        if not secret:
+            ctk.CTkEntry(parent, textvariable=self.vars[key], height=34).grid(
+                row=row + 1, column=col, columnspan=colspan, sticky="ew", padx=14, pady=(0, 12))
+            return
+        # secrets start hidden (safe to screen-record); the eye button toggles them
+        box = ctk.CTkFrame(parent, fg_color="transparent")
+        box.grid(row=row + 1, column=col, columnspan=colspan, sticky="ew", padx=14, pady=(0, 12))
+        entry = ctk.CTkEntry(box, textvariable=self.vars[key], width=100, height=34, show="•")  # grows to fill
+        entry.pack(side="left", fill="x", expand=True)
+
+        def toggle():
+            hidden = entry.cget("show") == "•"
+            entry.configure(show="" if hidden else "•")
+            eye.configure(image=self.eye_icons[hidden])
+        eye = ctk.CTkButton(box, text="", image=self.eye_icons[False], width=34, height=34,
+                            fg_color="transparent", hover_color="#3A3A3A", command=toggle)
+        eye.pack(side="left", padx=(4, 0))
 
     def _banner(self, text, action_text, action, on_close=None):
         bar = ctk.CTkFrame(self.right, corner_radius=10, border_width=1, border_color=GREEN)
