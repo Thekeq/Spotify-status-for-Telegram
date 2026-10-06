@@ -17,7 +17,27 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller --onefile --windowed --collect-data customtkinter --hidden-import pystray._win32 --name SpotifyStatus app.py
+      - name: Write exe version info (product name/version shown in file properties)
+        shell: python
+        run: |
+          import re
+          v = re.search(r'^VERSION = "([\d.]+)"', open("app.py", encoding="utf-8").read(), re.M)[1]
+          t = tuple(map(int, v.split("."))) + (0,)
+          open("version_info.txt", "w", encoding="utf-8").write(f"""VSVersionInfo(
+            ffi=FixedFileInfo(filevers={t}, prodvers={t}),
+            kids=[
+              StringFileInfo([StringTable('040904B0', [
+                StringStruct('CompanyName', 'Thekeq'),
+                StringStruct('FileDescription', 'Spotify Status for Telegram'),
+                StringStruct('FileVersion', '{v}'),
+                StringStruct('InternalName', 'SpotifyStatus'),
+                StringStruct('LegalCopyright', 'Copyright (c) 2026 Thekeq. MIT License'),
+                StringStruct('OriginalFilename', 'SpotifyStatus.exe'),
+                StringStruct('ProductName', 'Spotify Status for Telegram'),
+                StringStruct('ProductVersion', '{v}')])]),
+              VarFileInfo([VarStruct('Translation', [1033, 1200])])])
+          """)
+      - run: pyinstaller --onefile --windowed --collect-data customtkinter --hidden-import pystray._win32 --version-file version_info.txt --name SpotifyStatus app.py
       - uses: actions/upload-artifact@v4
         with:
           name: SpotifyStatus

@@ -9,3 +9,4 @@ build/
 dist/
 *.spec
 .venv*/
+version_info.txt

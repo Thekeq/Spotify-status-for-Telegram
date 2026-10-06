@@ -48,3 +48,33 @@ Leave "Your normal bio" empty to take it from your profile. Closing the window k
 ## Security
 
 Settings (`config.json`) and the login session (`tg_session.session`) are stored in `%APPDATA%\SpotifyStatus`. **The session file gives full access to your Telegram account**: never share it. The app talks only to the Telegram and Spotify APIs, plus GitHub to check for updates.
+
+## Uninstall
+
+1. Turn off **Launch with Windows**, so the app is removed from Windows startup.
+2. Right-click the tray icon → **Quit**. Your normal bio is restored.
+3. Delete `SpotifyStatus.exe` and the `%APPDATA%\SpotifyStatus` folder.
+4. Optional: end the session in Telegram (*Settings → Devices*) and delete the apps you created on my.telegram.org and developer.spotify.com.
+
+## Privacy
+
+The app only talks to:
+
+- **Telegram**, to update your bio;
+- **Spotify**, to read the track you're playing;
+- **GitHub**, to check for new versions (no information about you is sent).
+
+No analytics, no telemetry. Your keys and login sessions stay on your computer.
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+
+- Committers and reviewers: [Thekeq](https://github.com/Thekeq)
+- Approvers: [Thekeq](https://github.com/Thekeq)
+
+See [Privacy](#privacy) for what the app sends over the network.
+
+## License
+
+[MIT](LICENSE)
