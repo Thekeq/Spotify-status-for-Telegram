@@ -28,7 +28,7 @@ from telethon.errors import AboutTooLongError, FloodWaitError, PasswordHashInval
 if sys.platform == "win32":
     import winreg
 
-VERSION = "1.1.1"  # bump together with the release tag
+VERSION = "1.1.2"  # bump together with the release tag
 REPO = "Thekeq/Spotify-status-for-Telegram"
 REPO_URL = f"https://github.com/{REPO}"
 APP_NAME = "SpotifyStatusTelegram"
