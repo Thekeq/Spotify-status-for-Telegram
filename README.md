@@ -66,15 +66,6 @@ The app only talks to:
 
 No analytics, no telemetry. Your keys and login sessions stay on your computer.
 
-## Code signing policy
-
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
-
-- Committers and reviewers: [Thekeq](https://github.com/Thekeq)
-- Approvers: [Thekeq](https://github.com/Thekeq)
-
-See [Privacy](#privacy) for what the app sends over the network.
-
 ## License
 
 [MIT](LICENSE)
