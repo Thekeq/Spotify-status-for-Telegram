@@ -17,6 +17,7 @@ from tkinter import messagebox
 
 from PIL import Image, ImageDraw
 
+import certifi
 import customtkinter as ctk
 import pystray
 import qrcode
@@ -28,7 +29,7 @@ from telethon.errors import AboutTooLongError, FloodWaitError, PasswordHashInval
 if sys.platform == "win32":
     import winreg
 
-VERSION = "1.1.3"  # bump together with the release tag
+VERSION = "1.1.4"  # bump together with the release tag
 REPO = "Thekeq/Spotify-status-for-Telegram"
 REPO_URL = f"https://github.com/{REPO}"
 APP_NAME = "SpotifyStatusTelegram"
@@ -69,6 +70,13 @@ def prepare_data_dir():
         old, new = APP_DIR / name, DATA_DIR / name
         if old.exists() and not new.exists():
             shutil.copy2(old, new)
+    if FROZEN:
+        # The exe unpacks to %TEMP%\_MEI..., which disk cleaners can wipe while we sit in the tray, and
+        # requests reads certifi's CA file on every connection. Use a copy that survives a cleanup.
+        # ponytail: only the CA file is protected; other lazily read bundled files could still vanish
+        ca = DATA_DIR / "cacert.pem"
+        shutil.copyfile(certifi.where(), ca)
+        os.environ["REQUESTS_CA_BUNDLE"] = str(ca)
     if FROZEN:  # leftover from the last self-update
         try:
             Path(sys.executable).with_suffix(".old").unlink(missing_ok=True)
